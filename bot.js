@@ -21,6 +21,8 @@ const logger = require('./logging.js').logger
 
 let bot
 let reconnecting = false
+let jumpInterval = null
+let rotateInterval = null
 
 function createBot () {
   bot = mineflayer.createBot({
@@ -52,9 +54,9 @@ function createBot () {
       const p = config.position
       bot.pathfinder.setGoal(new GoalBlock(p.x, p.y, p.z))
 
-      // po 5s wyłączamy pathfinder CAŁKOWICIE
       setTimeout(() => {
         bot.pathfinder.stop()
+        bot.clearControlStates() // 🔥 SPRZĄTANIE PO PATHFINDERZE
         logger.info('🛑 Pathfinder OFF')
         startAntiAfk()
       }, 5000)
@@ -64,32 +66,34 @@ function createBot () {
   })
 
   /* =========================
-     ANTI AFK – DZIAŁA ZAWSZE
+     ANTI AFK – STABLE MODE
   ========================= */
   function startAntiAfk () {
     const afk = config.utils['anti-afk']
     if (!afk?.enabled) return
 
-    logger.info('🌀 Anti-AFK enabled (stable mode)')
+    logger.info('🌀 Anti-AFK enabled')
 
-    // 🔥 KLUCZ: TRZYMAMY PRZYCISKI
-    if (afk.jump) {
-  bot.setControlState('sneak', false) // 🔥 KLUCZ
-  bot.setControlState('jump', true)
-} else if (afk.sneak) {
-  bot.setControlState('sneak', true)
-}
+    bot.clearControlStates()
 
-    if (afk.walk) bot.setControlState('forward', true)
-
-    // sneak TYLKO jeśli nie skaczemy
-    if (afk.sneak && !afk.jump) {
-      bot.setControlState('sneak', true)
+    /* WALK */
+    if (afk.walk) {
+      bot.setControlState('forward', true)
     }
 
-    /* ROTATE – legit AFK */
+    /* JUMP – HUMAN MODE */
+    if (afk.jump) {
+      jumpInterval = setInterval(() => {
+        bot.setControlState('jump', true)
+        setTimeout(() => {
+          bot.setControlState('jump', false)
+        }, 200)
+      }, 2000)
+    }
+
+    /* ROTATE */
     if (afk.rotate) {
-      setInterval(() => {
+      rotateInterval = setInterval(() => {
         if (!bot.entity) return
         bot.look(
           bot.entity.yaw + (Math.random() - 0.5),
@@ -98,6 +102,15 @@ function createBot () {
         )
       }, 1500)
     }
+  }
+
+  /* =========================
+     CLEANUP
+  ========================= */
+  function stopAntiAfk () {
+    if (jumpInterval) clearInterval(jumpInterval)
+    if (rotateInterval) clearInterval(rotateInterval)
+    bot?.clearControlStates()
   }
 
   /* LOGI */
@@ -114,6 +127,7 @@ function createBot () {
   bot.on('error', e => logger.error(e))
 
   bot.on('end', () => {
+    stopAntiAfk()
     if (!config.utils['auto-reconnect'] || reconnecting) return
     reconnecting = true
     setTimeout(() => {
@@ -124,4 +138,3 @@ function createBot () {
 }
 
 createBot()
-
