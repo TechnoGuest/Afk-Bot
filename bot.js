@@ -89,14 +89,30 @@ function createBot () {
         }, 1000)
       }
 
-      /* JUMP (IMPULSE) */
-      if (afk.jump) {
-        setInterval(() => {
-          if (!bot.entity?.onGround) return
-          bot.setControlState('jump', true)
-          setTimeout(() => bot.setControlState('jump', false), 200)
-        }, 4000)
-      }
+      /* JUMP (PHYSICS TICK – REAL SKOK) */
+if (afk.jump) {
+  let jumping = false
+  let lastJump = 0
+
+  bot.on('physicsTick', () => {
+    const now = Date.now()
+
+    // cooldown 4s
+    if (jumping || now - lastJump < 4000) return
+
+    jumping = true
+    lastJump = now
+
+    // sneak OFF bo sneak = anty-jump
+    bot.setControlState('sneak', false)
+    bot.setControlState('jump', true)
+
+    setTimeout(() => {
+      bot.setControlState('jump', false)
+      jumping = false
+    }, 200)
+  })
+}
 
       /* SNEAK (TOGGLE) */
       if (afk.sneak) {
@@ -191,3 +207,4 @@ process.on('unhandledRejection', e =>
 )
 
 createBot()
+
