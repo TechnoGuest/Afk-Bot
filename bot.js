@@ -73,7 +73,13 @@ function createBot () {
     logger.info('🌀 Anti-AFK enabled (stable mode)')
 
     // 🔥 KLUCZ: TRZYMAMY PRZYCISKI
-    if (afk.jump) bot.setControlState('jump', true)
+    if (afk.jump) {
+  bot.setControlState('sneak', false) // 🔥 KLUCZ
+  bot.setControlState('jump', true)
+} else if (afk.sneak) {
+  bot.setControlState('sneak', true)
+}
+
     if (afk.walk) bot.setControlState('forward', true)
 
     // sneak TYLKO jeśli nie skaczemy
@@ -118,3 +124,4 @@ function createBot () {
 }
 
 createBot()
+
