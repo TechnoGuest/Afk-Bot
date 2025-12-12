@@ -156,16 +156,32 @@ function createBot() {
       });
    }
 
+   /* ===== FIXED KICK HANDLER (ANTI-CRASH) ===== */
    bot.on('kicked', (reason) => {
-      let reasonText = JSON.parse(reason).text;
-      if(reasonText === '') {
-         reasonText = JSON.parse(reason).extra[0].text
-      }
-      reasonText = reasonText.replace(/§./g, '');
+      let reasonText = 'Unknown kick reason';
 
-      logger.warn(`Bot was kicked from the server. Reason: ${reasonText}`)
-   }
-   );
+      try {
+         if (!reason) {
+            reasonText = 'No reason provided';
+         } else if (typeof reason === 'string') {
+            reasonText = reason;
+         } else if (Buffer.isBuffer(reason)) {
+            reasonText = reason.toString();
+         } else if (reason.text) {
+            reasonText = reason.text;
+         } else {
+            reasonText = JSON.stringify(reason);
+         }
+      } catch (e) {
+         reasonText = 'Error while parsing kick reason';
+      }
+
+      reasonText = String(reasonText)
+        .replace(/§./g, '')
+        .replace(/\n/g, ' ');
+
+      logger.warn(`Bot was kicked from the server. Reason: ${reasonText}`);
+   });
 
    bot.on('error', (err) =>
       logger.error(`${err.message}`)
