@@ -1,14 +1,14 @@
 {
   "bot-account": {
-    "username": "AFKBot", 
+    "username": "AFKBot",
     "password": "",
-    "type": "mojang"
+    "type": "offline"
   },
 
   "server": {
-    "ip": "83.168.107.138", 
+    "ip": "83.168.107.138",
     "port": 30108,
-    "version": "1.12.1"   
+    "version": "1.12.1"
   },
   
   "position": {
@@ -21,19 +21,21 @@
   "utils": {
     "auto-auth": {
       "enabled": false,
-      "password": ""
+      "password": "twoje_haslo_do_logowania"
     },
 
     "anti-afk": {
       "enabled": true,
-      "sneak": true
+      "jump": true,
+      "rotate": true,
+      "walk": false,
+      "sneak": false
     },
 
     "chat-messages": {
       "enabled": false,
       "repeat": true,
       "repeat-delay": 60,
-
       "messages": [
         "I'm a regular player",
         "Subscibe To Slobos!",
@@ -43,7 +45,6 @@
 
     "chat-log": true,
     "auto-reconnect": true,
-    "auto-recconect-delay": 5000
+    "auto-reconnect-delay": 5000
   }
 }
-
