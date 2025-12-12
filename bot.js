@@ -89,39 +89,18 @@ function createBot () {
         }, 1000)
       }
 
-      /* JUMP (PHYSICS TICK – REAL SKOK) */
+/* JUMP – OLD SCHOOL, DZIAŁA */
 if (afk.jump) {
-  let jumping = false
-  let lastJump = 0
+  bot.setControlState('jump', true)
 
-  bot.on('physicsTick', () => {
-    const now = Date.now()
-
-    // cooldown 4s
-    if (jumping || now - lastJump < 4000) return
-
-    jumping = true
-    lastJump = now
-
-    // sneak OFF bo sneak = anty-jump
+  // sneak BLOKUJE jump, więc tylko jeśli chcesz i wiesz co robisz
+  if (afk.sneak) {
+    bot.setControlState('sneak', true)
+  } else {
     bot.setControlState('sneak', false)
-    bot.setControlState('jump', true)
-
-    setTimeout(() => {
-      bot.setControlState('jump', false)
-      jumping = false
-    }, 200)
-  })
+  }
 }
 
-      /* SNEAK (TOGGLE) */
-      if (afk.sneak) {
-        let sneaking = false
-        setInterval(() => {
-          sneaking = !sneaking
-          bot.setControlState('sneak', sneaking)
-        }, 5000)
-      }
 
       /* SMALL RANDOM WALK */
       if (afk.walk) {
@@ -207,4 +186,5 @@ process.on('unhandledRejection', e =>
 )
 
 createBot()
+
 
