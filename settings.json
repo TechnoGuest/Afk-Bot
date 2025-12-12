@@ -2,12 +2,12 @@
   "bot-account": {
     "username": "AFKBot", 
     "password": "",
-    "type": "offline"
+    "type": "mojang"
   },
 
   "server": {
     "ip": "83.168.107.138", 
-    "port": 30108,   
+    "port": 30108,
     "version": "1.12.1"   
   },
   
@@ -42,7 +42,8 @@
     },
 
     "chat-log": true,
-    "auto-reconnect": false,
-    "auto-recconect-delay": 30000
+    "auto-reconnect": true,
+    "auto-recconect-delay": 5000
   }
 }
+
