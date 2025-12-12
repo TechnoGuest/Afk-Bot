@@ -75,7 +75,17 @@ function createBot () {
     const afk = config.utils['anti-afk']
     if (afk?.enabled) {
       if (afk.sneak) bot.setControlState('sneak', true)
-      if (afk.jump) bot.setControlState('jump', true)
+      if (afk.jump) {
+  setInterval(() => {
+    if (!bot.entity) return
+
+    bot.setControlState('jump', true)
+
+    setTimeout(() => {
+      bot.setControlState('jump', false)
+    }, 200)
+  }, 3000)
+}
 
       if (afk.rotate) {
         setInterval(() => {
@@ -155,4 +165,5 @@ process.on('unhandledRejection', e =>
 )
 
 createBot()
+
 
