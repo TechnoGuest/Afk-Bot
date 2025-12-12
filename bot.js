@@ -18,7 +18,6 @@ const mineflayer = require('mineflayer');
 const Movements = require('mineflayer-pathfinder').Movements;
 const pathfinder = require('mineflayer-pathfinder').pathfinder;
 const { GoalBlock } = require('mineflayer-pathfinder').goals;
-const keep_alive = require('./keep_alive.js')
 
 const config = require('./settings.json');
 const express = require('express');
@@ -187,6 +186,7 @@ function createBot() {
 }
 
 createBot();
+
 
 
 
