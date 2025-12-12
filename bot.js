@@ -81,16 +81,9 @@ function createBot () {
 
       /* JUMP – REALNY SKOK */
       if (afk.jump) {
-        setInterval(() => {
-          if (!bot.entity || bot.entity.onGround === false) return
-
-          bot.setControlState('jump', true)
-          setTimeout(() => {
-            bot.setControlState('jump', false)
-          }, 300)
-        }, 4000)
+        bot.setControlState('jump', true)
       }
-
+          
       /* ROTATE */
       if (afk.rotate) {
         setInterval(() => {
@@ -172,3 +165,4 @@ process.on('unhandledRejection', e =>
 )
 
 createBot()
+
