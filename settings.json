@@ -1,16 +1,16 @@
 {
   "bot-account": {
-    "username": "bot",
-    "password": "your_password",
-    "type": "microsoft"
+    "username": "AFKBot", 
+    "password": "",
+    "type": "mojang"
   },
 
   "server": {
-    "ip": "83.168.107.138",
-    "port": 30108,
-    "version": "1.19.3"
+    "ip": "83.168.107.138", 
+    "port": 30108,   
+    "version": "1.12.1"   
   },
-
+  
   "position": {
     "enabled": false,
     "x": 0,
@@ -21,25 +21,12 @@
   "utils": {
     "auto-auth": {
       "enabled": false,
-      "password": "12345678"
+      "password": ""
     },
 
     "anti-afk": {
-      "enabled": false,
-      "sneak": false,
-      "jump": false,
-      "rotate": false,
-
-      "hit": {
-        "enabled": false,
-        "delay": 1000,
-        "attack-mobs": false
-      },
-
-      "circle-walk": {
-        "enabled": false,
-        "radius": 2
-      }
+      "enabled": true,
+      "sneak": true
     },
 
     "chat-messages": {
@@ -48,15 +35,14 @@
       "repeat-delay": 60,
 
       "messages": [
-        "I'm a regular player ",
-        "My owner is urFate_ ",
-        "I want be alone ",
-        "Visit my GitHub page! (urFate/Afk-Bot)"
+        "I'm a regular player",
+        "Subscibe To Slobos!",
+        "I Like to Play Minecraft!"
       ]
     },
 
     "chat-log": true,
-    "auto-reconnect": false,
-    "auto-reconnect-delay": 5000
+    "auto-reconnect": true,
+    "auto-recconect-delay": 5000
   }
 }
