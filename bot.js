@@ -28,7 +28,7 @@ function createBot () {
   bot = mineflayer.createBot({
     username: config['bot-account'].username,
     password: config['bot-account'].password || undefined,
-    auth: config['bot-account'].type, // mojang / microsoft
+    auth: config['bot-account'].type,
     host: config.server.ip,
     port: config.server.port,
     version: config.server.version
@@ -45,9 +45,8 @@ function createBot () {
 
     /* AUTO AUTH */
     if (config.utils['auto-auth']?.enabled) {
-      const pass = config.utils['auto-auth'].password
       setTimeout(() => {
-        bot.chat(`/login ${pass}`)
+        bot.chat(`/login ${config.utils['auto-auth'].password}`)
       }, 800)
     }
 
@@ -63,36 +62,62 @@ function createBot () {
       if (config.utils['chat-messages'].repeat && msgs.length) {
         let i = 0
         setInterval(() => {
-          bot.chat(msgs[i % msgs.length])
-          i++
+          bot.chat(msgs[i++ % msgs.length])
         }, (config.utils['chat-messages']['repeat-delay'] || 60) * 1000)
       }
     }
 
-    /* ===== ANTI AFK (NAPRAWIONE) ===== */
+    /* =========================
+       ANTI AFK – FIXED & LEGIT
+    ========================= */
     const afk = config.utils['anti-afk']
     if (afk?.enabled) {
       logger.info('🌀 Anti-AFK enabled')
 
-      /* SNEAK */
-      if (afk.sneak) {
-        bot.setControlState('sneak', true)
-      }
+      // Pathfinder OFF for AFK
+      bot.pathfinder.setGoal(null)
 
-      /* JUMP – REALNY SKOK */
-      if (afk.jump) {
-        bot.setControlState('jump', true)
-      }
-          
       /* ROTATE */
       if (afk.rotate) {
         setInterval(() => {
           if (!bot.entity) return
-          bot.look(bot.entity.yaw + 0.5, bot.entity.pitch, true)
-        }, 200)
+          bot.look(
+            bot.entity.yaw + (Math.random() - 0.5),
+            bot.entity.pitch,
+            true
+          )
+        }, 1000)
       }
 
-      /* CIRCLE WALK */
+      /* JUMP (IMPULSE) */
+      if (afk.jump) {
+        setInterval(() => {
+          if (!bot.entity?.onGround) return
+          bot.setControlState('jump', true)
+          setTimeout(() => bot.setControlState('jump', false), 200)
+        }, 4000)
+      }
+
+      /* SNEAK (TOGGLE) */
+      if (afk.sneak) {
+        let sneaking = false
+        setInterval(() => {
+          sneaking = !sneaking
+          bot.setControlState('sneak', sneaking)
+        }, 5000)
+      }
+
+      /* SMALL RANDOM WALK */
+      if (afk.walk) {
+        setInterval(() => {
+          const dirs = ['forward', 'back', 'left', 'right']
+          const dir = dirs[Math.floor(Math.random() * dirs.length)]
+          bot.setControlState(dir, true)
+          setTimeout(() => bot.setControlState(dir, false), 800)
+        }, 6000)
+      }
+
+      /* OPTIONAL CIRCLE WALK */
       if (afk['circle-walk']?.enabled) {
         startCircleWalk(bot, afk['circle-walk'].radius || 2)
       }
@@ -110,9 +135,9 @@ function createBot () {
   bot.on('kicked', reason => {
     let msg = 'Unknown reason'
     try {
-      if (typeof reason === 'string') msg = reason
-      else if (reason?.text) msg = reason.text
-      else msg = JSON.stringify(reason)
+      msg = typeof reason === 'string'
+        ? reason
+        : reason?.text || JSON.stringify(reason)
     } catch {}
     msg = msg.replace(/§./g, '').replace(/\n/g, ' ')
     logger.warn(`❌ Kicked: ${msg}`)
@@ -123,13 +148,12 @@ function createBot () {
     logger.error(err?.message || err)
   })
 
-  /* AUTO RECONNECT (ANTI DUPLICATE LOGIN) */
+  /* AUTO RECONNECT */
   bot.on('end', () => {
-    if (!config.utils['auto-reconnect']) return
-    if (reconnecting) return
+    if (!config.utils['auto-reconnect'] || reconnecting) return
 
     reconnecting = true
-    logger.warn('🔁 Disconnected, reconnecting in 10s...')
+    logger.warn('🔁 Disconnected, reconnecting...')
 
     setTimeout(() => {
       reconnecting = false
@@ -138,7 +162,9 @@ function createBot () {
   })
 }
 
-/* ===== CIRCLE WALK (STABILNE) ===== */
+/* =========================
+   CIRCLE WALK
+========================= */
 function startCircleWalk (bot, r) {
   const base = bot.entity.position.clone()
   const points = [
@@ -153,7 +179,7 @@ function startCircleWalk (bot, r) {
     if (!bot.entity) return
     bot.pathfinder.setGoal(new GoalXZ(points[i][0], points[i][1]))
     i = (i + 1) % points.length
-  }, 3000)
+  }, 4000)
 }
 
 /* GLOBAL ANTI-CRASH */
@@ -165,4 +191,3 @@ process.on('unhandledRejection', e =>
 )
 
 createBot()
-
