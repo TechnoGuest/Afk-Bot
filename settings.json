@@ -25,13 +25,13 @@
     },
 
     "anti-afk": {
-      "enabled": true,
-      "jump": true,
-      "rotate": true,
-      "walk": false,
-      "useItem": true,
-      "sneak": false
-    },
+  "enabled": true,
+  "walk": true,
+  "jump": true,
+  "rotate": true,
+  "activateBlock": "lever",  <-- WAŻNE: Nazwa bloku, który ma być klikany
+  "useItemInterval": 8000   <-- Interwał w milisekundach (8 sekund)
+},
 
     "chat-messages": {
       "enabled": false,
