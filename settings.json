@@ -29,6 +29,7 @@
       "jump": true,
       "rotate": true,
       "walk": false,
+      "useItem": true,
       "sneak": false
     },
 
