@@ -23,7 +23,8 @@ let bot
 let reconnecting = false
 let jumpInterval = null
 let rotateInterval = null
-let useItemInterval = null // Utrzymujemy tę nazwę zmiennej dla spójności czyszczenia interwału
+let useItemInterval = null
+let walkInterval = null // <--- NOWA ZMIENNA DLA CHODZENIA
 
 function createBot () {
   bot = mineflayer.createBot({
@@ -57,7 +58,7 @@ function createBot () {
 
       setTimeout(() => {
         bot.pathfinder.stop()
-        bot.clearControlStates() // 🔥 SPRZĄTANIE PO PATHFINDERZE
+        bot.clearControlStates() 
         logger.info('🛑 Pathfinder OFF')
         startAntiAfk()
       }, 5000)
@@ -67,7 +68,7 @@ function createBot () {
   })
 
   /* =========================
-    ANTI AFK – STABLE MODE
+    ANTI AFK – ATERNOS MODE
   ========================= */
   function startAntiAfk () {
     const afk = config.utils['anti-afk']
@@ -77,9 +78,26 @@ function createBot () {
 
     bot.clearControlStates()
 
-    /* WALK */
+    /* WALK (PRZÓD / TYŁ) */
     if (afk.walk) {
+      // Zaczynamy od idź do przodu
+      let movingForward = true
       bot.setControlState('forward', true)
+
+      // Co 2000ms (2 sekundy) zmieniamy kierunek
+      walkInterval = setInterval(() => {
+        if (movingForward) {
+          // Zmień na tył
+          bot.setControlState('forward', false)
+          bot.setControlState('back', true)
+          movingForward = false
+        } else {
+          // Zmień na przód
+          bot.setControlState('back', false)
+          bot.setControlState('forward', true)
+          movingForward = true
+        }
+      }, 2000)
     }
 
     /* JUMP – HUMAN MODE */
@@ -104,44 +122,33 @@ function createBot () {
       }, 1500)
     }
     
-    /* ACTIVATE BLOCK (PRAWY PRZYCISK MYSZY CELOWANY) */
-    // Wymaga klucza "activateBlock" w settings.json, np. "lever"
+    /* ACTIVATE BLOCK */
     if (afk.activateBlock) {
         const blockName = afk.activateBlock
-        // Domyślny interwał to 8 sekund, jeśli nie ustawiono w configu
         const interval = afk.useItemInterval || 8000 
         
         logger.info(`🔨 Anti-AFK (Activate Block: ${blockName}) enabled, interval: ${interval}ms`)
 
         useItemInterval = setInterval(() => {
             if (!bot.entity) return
-
             const mcData = require('minecraft-data')(bot.version)
             const blockType = mcData.blocksByName[blockName]
 
-            if (!blockType) {
-                return logger.error(`Błąd: Nieznany blok do aktywacji: ${blockName}`)
-            }
+            if (!blockType) return logger.error(`Błąd: Nieznany blok: ${blockName}`)
             
-            // Szukaj bloku w promieniu 4 kratek
             const block = bot.findBlock({
                 matching: blockType.id,
                 maxDistance: 4, 
             })
 
             if (block) {
-                // 1. Wyceluj w środek bloku
                 bot.lookAt(block.position.offset(0.5, 0.5, 0.5), true, () => {
-                    // 2. Aktywuj blok (kliknięcie prawym przyciskiem myszy na bloku)
                     bot.activateBlock(block)
-                    logger.info(`✅ Aktywowano blok: ${blockName} na ${block.position}`)
+                    logger.info(`✅ Aktywowano blok: ${blockName}`)
                 })
-            } else {
-                logger.warn(`Nie znaleziono bloku ${blockName} w pobliżu.`)
             }
         }, interval)
     }
-
   }
 
   /* =========================
@@ -151,6 +158,8 @@ function createBot () {
     if (jumpInterval) clearInterval(jumpInterval)
     if (rotateInterval) clearInterval(rotateInterval)
     if (useItemInterval) clearInterval(useItemInterval) 
+    if (walkInterval) clearInterval(walkInterval) // <--- CZYŚCIMY CHODZENIE
+    
     bot?.clearControlStates()
   }
 
