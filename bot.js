@@ -23,7 +23,7 @@ let bot
 let reconnecting = false
 let jumpInterval = null
 let rotateInterval = null
-let useItemInterval = null // <-- NOWA ZMIENNA DLA PRAWY KLIK
+let useItemInterval = null // Utrzymujemy tę nazwę zmiennej dla spójności czyszczenia interwału
 
 function createBot () {
   bot = mineflayer.createBot({
@@ -104,18 +104,43 @@ function createBot () {
       }, 1500)
     }
     
-    /* USE ITEM (PRAWY PRZYCISK MYSZY) */
-    // Klikanie prawym przyciskiem myszy co 8 sekund.
-    useItemInterval = setInterval(() => {
-        // Symuluje przytrzymanie prawego przycisku
-        bot.activateItem() 
+    /* ACTIVATE BLOCK (PRAWY PRZYCISK MYSZY CELOWANY) */
+    // Wymaga klucza "activateBlock" w settings.json, np. "lever"
+    if (afk.activateBlock) {
+        const blockName = afk.activateBlock
+        // Domyślny interwał to 8 sekund, jeśli nie ustawiono w configu
+        const interval = afk.useItemInterval || 8000 
         
-        // Symuluje puszczenie przycisku po 100ms
-        setTimeout(() => {
-            bot.deactivateItem()
-        }, 100)
+        logger.info(`🔨 Anti-AFK (Activate Block: ${blockName}) enabled, interval: ${interval}ms`)
 
-    }, 8000) // Interwał 8 sekund (8000 ms)
+        useItemInterval = setInterval(() => {
+            if (!bot.entity) return
+
+            const mcData = require('minecraft-data')(bot.version)
+            const blockType = mcData.blocksByName[blockName]
+
+            if (!blockType) {
+                return logger.error(`Błąd: Nieznany blok do aktywacji: ${blockName}`)
+            }
+            
+            // Szukaj bloku w promieniu 4 kratek
+            const block = bot.findBlock({
+                matching: blockType.id,
+                maxDistance: 4, 
+            })
+
+            if (block) {
+                // 1. Wyceluj w środek bloku
+                bot.lookAt(block.position.offset(0.5, 0.5, 0.5), true, () => {
+                    // 2. Aktywuj blok (kliknięcie prawym przyciskiem myszy na bloku)
+                    bot.activateBlock(block)
+                    logger.info(`✅ Aktywowano blok: ${blockName} na ${block.position}`)
+                })
+            } else {
+                logger.warn(`Nie znaleziono bloku ${blockName} w pobliżu.`)
+            }
+        }, interval)
+    }
 
   }
 
@@ -125,7 +150,7 @@ function createBot () {
   function stopAntiAfk () {
     if (jumpInterval) clearInterval(jumpInterval)
     if (rotateInterval) clearInterval(rotateInterval)
-    if (useItemInterval) clearInterval(useItemInterval) // <-- CZYSZCZENIE NOWEGO INTERWAŁU
+    if (useItemInterval) clearInterval(useItemInterval) 
     bot?.clearControlStates()
   }
 
