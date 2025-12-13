@@ -1,5 +1,5 @@
 /* =========================
-   FAKE HTTP – RAILWAY KEEP ALIVE
+    FAKE HTTP – RAILWAY KEEP ALIVE
 ========================= */
 const http = require('http')
 
@@ -10,7 +10,7 @@ http.createServer((req, res) => {
 }).listen(PORT)
 
 /* =========================
-   BOT
+    BOT
 ========================= */
 const mineflayer = require('mineflayer')
 const { pathfinder, Movements, goals } = require('mineflayer-pathfinder')
@@ -23,6 +23,7 @@ let bot
 let reconnecting = false
 let jumpInterval = null
 let rotateInterval = null
+let useItemInterval = null // <-- NOWA ZMIENNA DLA PRAWY KLIK
 
 function createBot () {
   bot = mineflayer.createBot({
@@ -66,7 +67,7 @@ function createBot () {
   })
 
   /* =========================
-     ANTI AFK – STABLE MODE
+    ANTI AFK – STABLE MODE
   ========================= */
   function startAntiAfk () {
     const afk = config.utils['anti-afk']
@@ -102,14 +103,29 @@ function createBot () {
         )
       }, 1500)
     }
+    
+    /* USE ITEM (PRAWY PRZYCISK MYSZY) */
+    // Klikanie prawym przyciskiem myszy co 8 sekund.
+    useItemInterval = setInterval(() => {
+        // Symuluje przytrzymanie prawego przycisku
+        bot.activateItem() 
+        
+        // Symuluje puszczenie przycisku po 100ms
+        setTimeout(() => {
+            bot.deactivateItem()
+        }, 100)
+
+    }, 8000) // Interwał 8 sekund (8000 ms)
+
   }
 
   /* =========================
-     CLEANUP
+    CLEANUP
   ========================= */
   function stopAntiAfk () {
     if (jumpInterval) clearInterval(jumpInterval)
     if (rotateInterval) clearInterval(rotateInterval)
+    if (useItemInterval) clearInterval(useItemInterval) // <-- CZYSZCZENIE NOWEGO INTERWAŁU
     bot?.clearControlStates()
   }
 
