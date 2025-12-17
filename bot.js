@@ -1,5 +1,5 @@
 /* =========================
-    FAKE HTTP – RAILWAY KEEP ALIVE
+    FAKE HTTP – KEEP ALIVE
 ========================= */
 const http = require('http')
 
@@ -21,10 +21,13 @@ const logger = require('./logging.js').logger
 
 let bot
 let reconnecting = false
+
 let jumpInterval = null
 let rotateInterval = null
 let useItemInterval = null
-let walkInterval = null // <--- NOWA ZMIENNA DLA CHODZENIA
+let walkInterval = null
+let pardonInterval = null
+let chatInterval = null
 
 function createBot () {
   bot = mineflayer.createBot({
@@ -44,21 +47,56 @@ function createBot () {
     const mcData = require('minecraft-data')(bot.version)
     bot.pathfinder.setMovements(new Movements(bot, mcData))
 
-    /* AUTO AUTH */
+    /* =========================
+        AUTO AUTH
+    ========================= */
     if (config.utils['auto-auth']?.enabled) {
       setTimeout(() => {
         bot.chat(`/login ${config.utils['auto-auth'].password}`)
-      }, 800)
+        logger.info('🔐 Sent /login')
+      }, 1500)
     }
 
-    /* MOVE TO POSITION (JEDNORAZOWO) */
+    /* =========================
+        CHAT MESSAGES (FIX)
+    ========================= */
+    const chatCfg = config.utils['chat-messages']
+
+    if (chatCfg?.enabled && Array.isArray(chatCfg.messages)) {
+      let index = 0
+      const delay = (chatCfg['repeat-delay'] || 60) * 1000
+
+      setTimeout(() => {
+        logger.info('💬 Chat-messages enabled')
+
+        const sendMessage = () => {
+          const msg = chatCfg.messages[index]
+          if (!msg) return
+
+          bot.chat(msg)
+          logger.info(`📨 Sent: ${msg}`)
+
+          index = (index + 1) % chatCfg.messages.length
+        }
+
+        sendMessage()
+
+        if (chatCfg.repeat) {
+          chatInterval = setInterval(sendMessage, delay)
+        }
+      }, 4000) // WAŻNE: delay po spawnie + loginie
+    }
+
+    /* =========================
+        MOVE TO POSITION
+    ========================= */
     if (config.position?.enabled) {
       const p = config.position
       bot.pathfinder.setGoal(new GoalBlock(p.x, p.y, p.z))
 
       setTimeout(() => {
         bot.pathfinder.stop()
-        bot.clearControlStates() 
+        bot.clearControlStates()
         logger.info('🛑 Pathfinder OFF')
         startAntiAfk()
       }, 5000)
@@ -68,46 +106,33 @@ function createBot () {
   })
 
   /* =========================
-    ANTI AFK – ATERNOS MODE
+      ANTI AFK + WATCHDOG
   ========================= */
   function startAntiAfk () {
     const afk = config.utils['anti-afk']
     if (!afk?.enabled) return
 
     logger.info('🌀 Anti-AFK enabled')
-
     bot.clearControlStates()
 
-    /* WALK (PRZÓD / TYŁ) */
+    /* WALK */
     if (afk.walk) {
-      // Zaczynamy od idź do przodu
-      let movingForward = true
+      let forward = true
       bot.setControlState('forward', true)
 
-      // Co 2000ms (2 sekundy) zmieniamy kierunek
       walkInterval = setInterval(() => {
-        if (movingForward) {
-          // Zmień na tył
-          bot.setControlState('forward', false)
-          bot.setControlState('back', true)
-          movingForward = false
-        } else {
-          // Zmień na przód
-          bot.setControlState('back', false)
-          bot.setControlState('forward', true)
-          movingForward = true
-        }
+        bot.setControlState('forward', forward)
+        bot.setControlState('back', !forward)
+        forward = !forward
       }, 2000)
     }
 
-    /* JUMP – HUMAN MODE */
+    /* JUMP */
     if (afk.jump) {
       jumpInterval = setInterval(() => {
         bot.setControlState('jump', true)
-        setTimeout(() => {
-          bot.setControlState('jump', false)
-        }, 200)
-      }, 2000)
+        setTimeout(() => bot.setControlState('jump', false), 200)
+      }, 2500)
     }
 
     /* ROTATE */
@@ -121,49 +146,48 @@ function createBot () {
         )
       }, 1500)
     }
-    
-    /* ACTIVATE BLOCK */
-    if (afk.activateBlock) {
-        const blockName = afk.activateBlock
-        const interval = afk.useItemInterval || 8000 
-        
-        logger.info(`🔨 Anti-AFK (Activate Block: ${blockName}) enabled, interval: ${interval}ms`)
 
-        useItemInterval = setInterval(() => {
-            if (!bot.entity) return
-            const mcData = require('minecraft-data')(bot.version)
-            const blockType = mcData.blocksByName[blockName]
+    /* =========================
+        WATCHDOG – /pardon
+    ========================= */
+    if (afk.watchAfkBot?.enabled) {
+      const target = afk.watchAfkBot.username || 'AFKBot'
+      const interval = afk.watchAfkBot.checkInterval || 15000
+      let lastPardon = 0
 
-            if (!blockType) return logger.error(`Błąd: Nieznany blok: ${blockName}`)
-            
-            const block = bot.findBlock({
-                matching: blockType.id,
-                maxDistance: 4, 
-            })
+      logger.info(`👀 Watchdog ON – pilnuję: ${target}`)
 
-            if (block) {
-                bot.lookAt(block.position.offset(0.5, 0.5, 0.5), true, () => {
-                    bot.activateBlock(block)
-                    logger.info(`✅ Aktywowano blok: ${blockName}`)
-                })
-            }
-        }, interval)
+      pardonInterval = setInterval(() => {
+        if (!bot.players) return
+
+        const online = Object.keys(bot.players)
+        const now = Date.now()
+
+        if (!online.includes(target) && now - lastPardon > interval) {
+          logger.warn(`⚠️ ${target} offline – wysyłam /pardon`)
+          bot.chat(`/pardon ${target}`)
+          lastPardon = now
+        }
+      }, interval)
     }
   }
 
   /* =========================
-    CLEANUP
+      CLEANUP
   ========================= */
   function stopAntiAfk () {
-    if (jumpInterval) clearInterval(jumpInterval)
-    if (rotateInterval) clearInterval(rotateInterval)
-    if (useItemInterval) clearInterval(useItemInterval) 
-    if (walkInterval) clearInterval(walkInterval) // <--- CZYŚCIMY CHODZENIE
-    
+    clearInterval(jumpInterval)
+    clearInterval(rotateInterval)
+    clearInterval(useItemInterval)
+    clearInterval(walkInterval)
+    clearInterval(pardonInterval)
+    clearInterval(chatInterval)
     bot?.clearControlStates()
   }
 
-  /* LOGI */
+  /* =========================
+      LOGI
+  ========================= */
   bot.on('chat', (u, m) => {
     if (config.utils['chat-log']) {
       logger.info(`<${u}> ${m}`)
@@ -179,11 +203,12 @@ function createBot () {
   bot.on('end', () => {
     stopAntiAfk()
     if (!config.utils['auto-reconnect'] || reconnecting) return
+
     reconnecting = true
     setTimeout(() => {
       reconnecting = false
       createBot()
-    }, 10000)
+    }, config.utils['auto-reconnect-delay'] || 10000)
   })
 }
 
