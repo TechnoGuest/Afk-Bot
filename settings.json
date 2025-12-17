@@ -1,6 +1,6 @@
 {
   "bot-account": {
-    "username": "AFKBot",
+    "username": "AFKbot",
     "password": "",
     "type": "offline"
   },
@@ -10,7 +10,7 @@
     "port": 30450,
     "version": "1.12.1"
   },
-  
+
   "position": {
     "enabled": false,
     "x": 0,
@@ -20,32 +20,45 @@
 
   "utils": {
     "auto-auth": {
-      "enabled": false,
-      "password": "twoje_haslo_do_logowania"
+      "enabled": true,
+      "password": "12345678"
     },
 
     "anti-afk": {
-  "enabled": true,
-  "walk": true,
-  "jump": true,
-  "rotate": true,
-  "activateBlock": "lever",
-  "useItemInterval": 8000
-},
+      "enabled": true,
+      "walk": true,
+      "jump": true,
+      "rotate": true
+    },
+
+    "watchAfkBot": {
+      "enabled": true,
+      "username": "AFKBot",
+      "checkInterval": 15000
+    },
+
+    "hit": {
+      "enabled": false,
+      "delay": 1000,
+      "attack-mobs": false
+    },
+
+    "circle-walk": {
+      "enabled": false,
+      "radius": 2
+    },
 
     "chat-messages": {
-      "enabled": false,
+      "enabled": true,
       "repeat": true,
       "repeat-delay": 60,
       "messages": [
-        "I'm a regular player",
-        "Subscibe To Slobos!",
-        "I Like to Play Minecraft!"
+        "/pardon AFKBot"
       ]
     },
 
     "chat-log": true,
     "auto-reconnect": true,
-    "auto-reconnect-delay": 5000
+    "auto-reconnect-delay": 30000
   }
 }
